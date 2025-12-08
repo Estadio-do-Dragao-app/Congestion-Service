@@ -10,6 +10,7 @@ class CellCongestionData(BaseModel):
     congestion_level: float = Field(..., ge=0, le=1, description="Congestion level from 0 (empty) to 1 (full capacity)")
     people_count: Optional[int] = Field(None, description="Actual number of people in the cell")
     capacity: Optional[int] = Field(None, description="Maximum capacity of the cell")
+    timestamp: datetime = Field(default_factory=datetime.now, description="When the data was recorded")
 
 class SectionHeatmapResponse(BaseModel):
     """Heatmap data for a specific section"""
