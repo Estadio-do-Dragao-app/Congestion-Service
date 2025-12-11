@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: congestion-mosquitto-broker
+    ports:
+      - "1885:1883"  # MQTT (port 1885 for client connections)
+      - "9003:9001"  # WebSocket
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+    networks:
+      - congestion-network
+    restart: unless-stopped
+
+  congestion-service:
+    build: .
+    container_name: congestion-service
+    depends_on:
+      - mosquitto
+    environment:
+      - MQTT_BROKER=mosquitto
+      - MQTT_PORT=1883
+      - SIMULATOR_BROKER=host.docker.internal
+      - SIMULATOR_PORT=1883
+      - SIMULATOR_TOPIC=stadium/events/congestion
+      - CLIENT_TOPIC=stadium/services/congestion
+    networks:
+      - congestion-network
+    restart: unless-stopped
+
+networks:
+  congestion-network:
+    driver: bridge

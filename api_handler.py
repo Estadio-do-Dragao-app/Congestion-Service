@@ -8,11 +8,25 @@ app = FastAPI(title="Smart Stadium Congestion Service API",
               description="API for managing and retrieving congestion data in a smart stadium environment.",
               version="1.0.0")
 
-
-
 # In-memory storage
 cell_congestion_store: Dict[str, CellCongestionData] = {}  # {section_id: CongestionData}
 first_update_time: Optional[datetime] = None
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize MQTT connection on startup"""
+    print("=" * 60)
+    print("Smart Stadium Congestion Service - Starting Up")
+    print("=" * 60)
+    print("\n[STARTUP] Initializing MQTT Handler...")
+    
+    # Import here to avoid circular dependencies
+    from mqtt_handler import start_mqtt
+    start_mqtt(cell_congestion_store)
+    
+    print("[STARTUP] MQTT Handler initialized")
+    print("[STARTUP] API Documentation: http://0.0.0.0:8000/docs")
+    print("=" * 60 + "\n")
 
 @app.get("/")
 async def root():

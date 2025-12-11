@@ -1,0 +1,42 @@
+1765460949: mosquitto version 2.0.22 starting
+1765460949: Config loaded from /mosquitto/config/mosquitto.conf.
+1765460949: Opening ipv4 listen socket on port 1883.
+1765460949: Opening ipv6 listen socket on port 1883.
+1765460949: Opening websockets listen socket on port 9001.
+1765460949: mosquitto version 2.0.22 running
+1765461079: mosquitto version 2.0.22 terminating
+1765461079: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1765461088: mosquitto version 2.0.22 starting
+1765461088: Config loaded from /mosquitto/config/mosquitto.conf.
+1765461088: Opening ipv4 listen socket on port 1883.
+1765461088: Opening ipv6 listen socket on port 1883.
+1765461088: Opening websockets listen socket on port 9001.
+1765461088: mosquitto version 2.0.22 running
+1765462889: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1765464690: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1765465093: mosquitto version 2.0.22 terminating
+1765465093: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1765465095: mosquitto version 2.0.22 starting
+1765465095: Config loaded from /mosquitto/config/mosquitto.conf.
+1765465095: Opening ipv4 listen socket on port 1883.
+1765465095: Opening ipv6 listen socket on port 1883.
+1765465095: Opening websockets listen socket on port 9001.
+1765465095: mosquitto version 2.0.22 running
+1765465775: mosquitto version 2.0.22 terminating
+1765465775: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1765465781: mosquitto version 2.0.22 starting
+1765465781: Config loaded from /mosquitto/config/mosquitto.conf.
+1765465781: Opening ipv4 listen socket on port 1883.
+1765465781: Opening ipv6 listen socket on port 1883.
+1765465781: Opening websockets listen socket on port 9001.
+1765465781: mosquitto version 2.0.22 running
+1765466177: mosquitto version 2.0.22 terminating
+1765466177: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1765466218: mosquitto version 2.0.22 starting
+1765466218: Config loaded from /mosquitto/config/mosquitto.conf.
+1765466218: Opening ipv4 listen socket on port 1883.
+1765466218: Opening ipv6 listen socket on port 1883.
+1765466218: Opening websockets listen socket on port 9001.
+1765466218: mosquitto version 2.0.22 running
+1765466387: mosquitto version 2.0.22 terminating
+1765466387: Saving in-memory database to /mosquitto/data//mosquitto.db.
