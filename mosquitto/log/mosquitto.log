@@ -40,3 +40,31 @@
 1765466218: mosquitto version 2.0.22 running
 1765466387: mosquitto version 2.0.22 terminating
 1765466387: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1765466392: mosquitto version 2.0.22 starting
+1765466392: Config loaded from /mosquitto/config/mosquitto.conf.
+1765466392: Opening ipv4 listen socket on port 1883.
+1765466392: Opening ipv6 listen socket on port 1883.
+1765466392: Opening websockets listen socket on port 9001.
+1765466392: mosquitto version 2.0.22 running
+1765466394: New connection from 172.20.0.3:36833 on port 1883.
+1765466394: New client connected from 172.20.0.3:36833 as congestion_service_publisher (p2, c1, k60).
+1765468192: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1765471013: mosquitto version 2.0.22 starting
+1765471013: Config loaded from /mosquitto/config/mosquitto.conf.
+1765471013: Opening ipv4 listen socket on port 1883.
+1765471013: Opening ipv6 listen socket on port 1883.
+1765471013: Opening websockets listen socket on port 9001.
+1765471013: mosquitto version 2.0.22 running
+1765471021: New connection from 172.20.0.2:40261 on port 1883.
+1765471021: New client connected from 172.20.0.2:40261 as congestion_service_publisher (p2, c1, k60).
+1765476878: mosquitto version 2.0.22 starting
+1765476878: Config loaded from /mosquitto/config/mosquitto.conf.
+1765476878: Opening ipv4 listen socket on port 1883.
+1765476878: Opening ipv6 listen socket on port 1883.
+1765476878: Opening websockets listen socket on port 9001.
+1765476878: mosquitto version 2.0.22 running
+1765476882: New connection from 172.20.0.2:44657 on port 1883.
+1765476882: New client connected from 172.20.0.2:44657 as congestion_service_publisher (p2, c1, k60).
+1765478678: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1765480383: mosquitto version 2.0.22 terminating
+1765480383: Saving in-memory database to /mosquitto/data//mosquitto.db.

@@ -10,18 +10,18 @@ cell_congestion_store = None
 def on_simulator_connect(client, userdata, flags, rc):
     """Handle MQTT connection to simulator broker"""
     if rc == 0:
-        print(f"[MQTT] Connected to simulator broker {SIMULATOR_BROKER}:{SIMULATOR_PORT}")
+        print(f"[SIMULATOR] Connected to broker at {SIMULATOR_BROKER}:{SIMULATOR_PORT}")
         client.subscribe(SIMULATOR_TOPIC)
-        print(f"[MQTT] Subscribed to simulator topic: {SIMULATOR_TOPIC}")
+        print(f"[SIMULATOR] Subscribed to topic: {SIMULATOR_TOPIC}")
     else:
-        print(f"[MQTT] Failed to connect to simulator broker, return code {rc}")
+        print(f"[SIMULATOR] Connection failed with code {rc}")
 
 def on_client_connect(client, userdata, flags, rc):
     """Handle MQTT connection to client broker"""
     if rc == 0:
-        print(f"[MQTT] Connected to client broker {CLIENT_BROKER}:{CLIENT_PORT}")
+        print(f"[CLIENT] Connected to broker at {CLIENT_BROKER}:{CLIENT_PORT}")
     else:
-        print(f"[MQTT] Failed to connect to client broker, return code {rc}")
+        print(f"[CLIENT] Connection failed with code {rc}")
 
 def on_message(client, userdata, msg):
     """Process incoming MQTT messages with congestion data from simulator"""
@@ -36,7 +36,7 @@ def on_message(client, userdata, msg):
             grid_data = data_dict.get('grid_data', [])
             timestamp = data_dict.get('timestamp', datetime.now().isoformat())
             
-            print(f"[MQTT] Received crowd_density event with {len(grid_data)} cells")
+            print(f"[SIMULATOR] Received crowd_density event with {len(grid_data)} cells")
             
             # Process each cell in the grid
             for cell_data in grid_data:
@@ -64,7 +64,7 @@ def on_message(client, userdata, msg):
                     # Publish to client broker for client consumption
                     publish_to_clients(congestion_data)
                     
-            print(f"[MQTT] Processed and stored {len(grid_data)} cells")
+            print(f"[SIMULATOR] Processed and stored {len(grid_data)} cells")
         else:
             # Try to parse as direct CellCongestionData (for backwards compatibility)
             if 'timestamp' not in data_dict:
@@ -75,17 +75,17 @@ def on_message(client, userdata, msg):
             # Store in the shared dictionary
             if cell_congestion_store is not None:
                 cell_congestion_store[congestion_data.cell_id] = congestion_data
-                print(f"[MQTT] Stored data - Cell: {congestion_data.cell_id}, Congestion: {congestion_data.congestion_level}")
+                print(f"[SIMULATOR] Stored congestion data - Cell: {congestion_data.cell_id}, Level: {congestion_data.congestion_level}")
                 
                 # Publish to client broker for client consumption
                 publish_to_clients(congestion_data)
             else:
-                print(f"[MQTT] Warning: Storage not initialized yet")
+                print(f"[SIMULATOR] Warning: Storage not initialized yet")
         
     except json.JSONDecodeError as e:
-        print(f"[MQTT] JSON decode error: {e}")
+        print(f"[SIMULATOR] JSON decode error: {e}")
     except Exception as e:
-        print(f"[MQTT] Error processing message: {e}")
+        print(f"[SIMULATOR] Error processing message: {e}")
         import traceback
         traceback.print_exc()
 
@@ -94,9 +94,9 @@ def publish_to_clients(congestion_data: CellCongestionData):
     try:
         payload = congestion_data.model_dump_json()
         client_publisher.publish(CLIENT_TOPIC, payload, qos=1)
-        print(f"[MQTT] Published to clients - Cell: {congestion_data.cell_id}")
+        print(f"[CLIENT] Published to topic: {CLIENT_TOPIC} (cell={congestion_data.cell_id}, level={congestion_data.congestion_level:.2f})")
     except Exception as e:
-        print(f"[MQTT] Error publishing to clients: {e}")
+        print(f"[CLIENT] Error publishing: {e}")
 
 # Create separate MQTT clients for simulator and client connections
 simulator_client = mqtt.Client(client_id="congestion_service_receiver")
@@ -115,11 +115,11 @@ def start_mqtt(store):
         # Connect to simulator broker (to receive congestion events)
         simulator_client.connect(SIMULATOR_BROKER, SIMULATOR_PORT, 60)
         simulator_client.loop_start()
-        print(f"[MQTT] Simulator client started, connecting to {SIMULATOR_BROKER}:{SIMULATOR_PORT}...")
+        print(f"[SIMULATOR] Client started, connecting to {SIMULATOR_BROKER}:{SIMULATOR_PORT}")
         
         # Connect to client broker (to publish congestion data)
         client_publisher.connect(CLIENT_BROKER, CLIENT_PORT, 60)
         client_publisher.loop_start()
-        print(f"[MQTT] Client publisher started, connecting to {CLIENT_BROKER}:{CLIENT_PORT}...")
+        print(f"[CLIENT] Publisher started, connecting to {CLIENT_BROKER}:{CLIENT_PORT}")
     except Exception as e:
-        print(f"[MQTT] Failed to start MQTT: {e}")
+        print(f"[MQTT] Failed to start: {e}")
