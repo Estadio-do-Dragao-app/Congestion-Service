@@ -2,7 +2,6 @@
 Test suite for API handler endpoints
 """
 import pytest
-from starlette.testclient import TestClient
 from datetime import datetime
 from unittest.mock import patch, MagicMock
 
@@ -10,11 +9,12 @@ from unittest.mock import patch, MagicMock
 @pytest.fixture
 def client():
     """Create test client"""
-    # Import here to avoid circular imports and startup issues
-    from api_handler import app
-    
-    # Use context manager to handle startup/shutdown events
-    with TestClient(app) as client:
+    # Mock the MQTT startup to prevent it from running
+    with patch('api_handler.start_mqtt'):
+        from starlette.testclient import TestClient
+        from api_handler import app
+        
+        client = TestClient(app)
         yield client
 
 
