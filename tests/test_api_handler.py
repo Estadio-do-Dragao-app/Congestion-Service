@@ -5,18 +5,29 @@ import pytest
 from fastapi.testclient import TestClient
 from datetime import datetime
 from unittest.mock import patch, MagicMock
-from api_handler import app, cell_congestion_store, first_update_time
-from models import CellCongestionData
 
 
 @pytest.fixture
 def client():
     """Create test client"""
+    # Import here to avoid circular imports and startup issues
+    from api_handler import app
+    
+    # Disable startup event for testing
+    app.router.on_startup = []
+    
     return TestClient(app)
 
 
 @pytest.fixture
-def clear_store():
+def cell_congestion_store():
+    """Get reference to the store"""
+    from api_handler import cell_congestion_store
+    return cell_congestion_store
+
+
+@pytest.fixture
+def clear_store(cell_congestion_store):
     """Clear the congestion store before each test"""
     cell_congestion_store.clear()
     yield
@@ -36,8 +47,10 @@ def sample_cell_data():
 
 
 @pytest.fixture
-def populate_store():
+def populate_store(cell_congestion_store):
     """Populate store with sample data"""
+    from models import CellCongestionData
+    
     cell_congestion_store.clear()
     for i in range(5):
         data = CellCongestionData(
@@ -78,7 +91,7 @@ class TestSubmitCongestionData:
         assert data["congestion_level"] == 0.5
         assert "timestamp" in data
     
-    def test_submit_stores_data(self, client, clear_store, sample_cell_data):
+    def test_submit_stores_data(self, client, clear_store, sample_cell_data, cell_congestion_store):
         """Test that submitted data is stored"""
         client.post("/congestion", json=sample_cell_data)
         assert "cell_1" in cell_congestion_store
@@ -103,7 +116,7 @@ class TestSubmitCongestionData:
         response = client.post("/congestion", json=invalid_data)
         assert response.status_code == 422
     
-    def test_submit_updates_existing_cell(self, client, clear_store, sample_cell_data):
+    def test_submit_updates_existing_cell(self, client, clear_store, sample_cell_data, cell_congestion_store):
         """Test submitting data for existing cell updates it"""
         # First submission
         client.post("/congestion", json=sample_cell_data)
@@ -231,7 +244,7 @@ class TestListSections:
 class TestClearCellData:
     """Test DELETE /cell/{cell_id} endpoint"""
     
-    def test_clear_existing_cell(self, client, populate_store):
+    def test_clear_existing_cell(self, client, populate_store, cell_congestion_store):
         """Test clearing data for existing cell"""
         assert "cell_1" in cell_congestion_store
         response = client.delete("/cell/cell_1")
@@ -249,7 +262,7 @@ class TestClearCellData:
 class TestClearSectionData:
     """Test DELETE /section/{section_id} endpoint"""
     
-    def test_clear_existing_section(self, client, populate_store):
+    def test_clear_existing_section(self, client, populate_store, cell_congestion_store):
         """Test clearing data for existing section"""
         assert "cell_2" in cell_congestion_store
         response = client.delete("/section/cell_2")
@@ -267,7 +280,7 @@ class TestClearSectionData:
 class TestClearAllData:
     """Test DELETE /stadium endpoint"""
     
-    def test_clear_all_data(self, client, populate_store):
+    def test_clear_all_data(self, client, populate_store, cell_congestion_store):
         """Test clearing all stadium data"""
         assert len(cell_congestion_store) == 5
         response = client.delete("/stadium")
@@ -318,7 +331,7 @@ class TestHealthCheck:
 class TestEdgeCases:
     """Test edge cases and boundary conditions"""
     
-    def test_multiple_submissions_same_cell(self, client, clear_store, sample_cell_data):
+    def test_multiple_submissions_same_cell(self, client, clear_store, sample_cell_data, cell_congestion_store):
         """Test multiple submissions for the same cell"""
         for i in range(10):
             data = sample_cell_data.copy()
@@ -349,8 +362,10 @@ class TestEdgeCases:
         response = client.post("/congestion", json=data)
         assert response.status_code == 201
     
-    def test_single_cell_heatmap(self, client, clear_store):
+    def test_single_cell_heatmap(self, client, clear_store, cell_congestion_store):
         """Test stadium heatmap with single cell"""
+        from models import CellCongestionData
+        
         data = CellCongestionData(
             cell_id="only_cell",
             congestion_level=0.5,
