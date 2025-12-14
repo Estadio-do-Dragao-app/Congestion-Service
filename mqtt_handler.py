@@ -35,6 +35,7 @@ def on_message(client, userdata, msg):
             # Extract grid_data array
             grid_data = data_dict.get('grid_data', [])
             timestamp = data_dict.get('timestamp', datetime.now().isoformat())
+            level = data_dict.get('level', 0)
             
             print(f"[SIMULATOR] Received crowd_density event with {len(grid_data)} cells")
             
@@ -46,7 +47,7 @@ def on_message(client, userdata, msg):
                     # Generate cell_id from x,y coordinates
                     x = cell_data.get('x', 0)
                     y = cell_data.get('y', 0)
-                    cell_id = f"cell_{x}_{y}"
+                    cell_id = f"cell_{level}_{x}_{y}"
                     
                 count = cell_data.get('count', 0)
                 
@@ -61,6 +62,7 @@ def on_message(client, userdata, msg):
                     congestion_level=congestion_level,
                     people_count=count,
                     capacity=max_capacity,
+                    level=level,
                     timestamp=timestamp
                 )
                 

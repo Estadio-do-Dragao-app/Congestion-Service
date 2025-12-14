@@ -9,6 +9,7 @@ class CellCongestionData(BaseModel):
     cell_id: str = Field(..., description="Identifier for the cell within the section")
     congestion_level: float = Field(..., ge=0, le=1, description="Congestion level from 0 (empty) to 1 (full capacity)")
     people_count: Optional[int] = Field(None, description="Actual number of people in the cell")
+    level: int = Field(0, description="Floor level of the cell")
     capacity: Optional[int] = Field(None, description="Maximum capacity of the cell")
     timestamp: datetime = Field(default_factory=datetime.now, description="When the data was recorded")
 
