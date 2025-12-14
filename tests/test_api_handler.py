@@ -10,7 +10,7 @@ from unittest.mock import patch, MagicMock
 def client():
     """Create test client"""
     # Mock the MQTT startup to prevent it from running
-    with patch('api_handler.start_mqtt'):
+    with patch('mqtt_handler.start_mqtt'):
         from starlette.testclient import TestClient
         from api_handler import app
         
