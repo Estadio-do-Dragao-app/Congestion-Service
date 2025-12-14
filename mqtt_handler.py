@@ -23,6 +23,72 @@ def on_client_connect(client, userdata, flags, rc):
     else:
         print(f"[CLIENT] Connection failed with code {rc}")
 
+def process_grid_cell(cell_data, level, timestamp):
+    """Process a single cell from grid data"""
+    # Get cell_id or generate from x,y coordinates
+    cell_id = cell_data.get('cell_id')
+    if cell_id is None:
+        # Generate cell_id from x,y coordinates
+        x = cell_data.get('x', 0)
+        y = cell_data.get('y', 0)
+        cell_id = f"cell_{level}_{x}_{y}"
+        
+    count = cell_data.get('count', 0)
+    
+    # Calculate congestion level (0-1 scale)
+    # Assuming max 50 people per cell as full capacity
+    max_capacity = 50
+    congestion_level = min(count / max_capacity, 1.0)
+    
+    # Create CellCongestionData object
+    congestion_data = CellCongestionData(
+        cell_id=cell_id,
+        congestion_level=congestion_level,
+        people_count=count,
+        capacity=max_capacity,
+        level=level,
+        timestamp=timestamp
+    )
+    
+    return congestion_data
+
+def process_crowd_density_event(data_dict):
+    """Process crowd_density event type"""
+    grid_data = data_dict.get('grid_data', [])
+    timestamp = data_dict.get('timestamp', datetime.now().isoformat())
+    level = data_dict.get('level', 0)
+    
+    print(f"[SIMULATOR] Received crowd_density event with {len(grid_data)} cells")
+    
+    # Process each cell in the grid
+    for cell_data in grid_data:
+        congestion_data = process_grid_cell(cell_data, level, timestamp)
+        
+        # Store in the shared dictionary
+        if cell_congestion_store is not None:
+            cell_congestion_store[congestion_data.cell_id] = congestion_data
+            # Publish to client broker for client consumption
+            publish_to_clients(congestion_data)
+                
+    print(f"[SIMULATOR] Processed and stored {len(grid_data)} cells")
+
+def process_legacy_congestion_data(data_dict):
+    """Process legacy CellCongestionData format"""
+    if 'timestamp' not in data_dict:
+        data_dict['timestamp'] = datetime.now()
+    
+    congestion_data = CellCongestionData(**data_dict)
+    
+    # Store in the shared dictionary
+    if cell_congestion_store is not None:
+        cell_congestion_store[congestion_data.cell_id] = congestion_data
+        print(f"[SIMULATOR] Stored congestion data - Cell: {congestion_data.cell_id}, Level: {congestion_data.congestion_level}")
+        
+        # Publish to client broker for client consumption
+        publish_to_clients(congestion_data)
+    else:
+        print("[SIMULATOR] Warning: Storage not initialized yet")
+
 def on_message(client, userdata, msg):
     """Process incoming MQTT messages with congestion data from simulator"""
     try:
@@ -32,64 +98,10 @@ def on_message(client, userdata, msg):
         
         # Check if this is a crowd_density event from the simulator
         if data_dict.get('event_type') == 'crowd_density':
-            # Extract grid_data array
-            grid_data = data_dict.get('grid_data', [])
-            timestamp = data_dict.get('timestamp', datetime.now().isoformat())
-            level = data_dict.get('level', 0)
-            
-            print(f"[SIMULATOR] Received crowd_density event with {len(grid_data)} cells")
-            
-            # Process each cell in the grid
-            for cell_data in grid_data:
-                # Get cell_id or generate from x,y coordinates
-                cell_id = cell_data.get('cell_id')
-                if cell_id is None:
-                    # Generate cell_id from x,y coordinates
-                    x = cell_data.get('x', 0)
-                    y = cell_data.get('y', 0)
-                    cell_id = f"cell_{level}_{x}_{y}"
-                    
-                count = cell_data.get('count', 0)
-                
-                # Calculate congestion level (0-1 scale)
-                # Assuming max 50 people per cell as full capacity
-                max_capacity = 50
-                congestion_level = min(count / max_capacity, 1.0)
-                
-                # Create CellCongestionData object
-                congestion_data = CellCongestionData(
-                    cell_id=cell_id,
-                    congestion_level=congestion_level,
-                    people_count=count,
-                    capacity=max_capacity,
-                    level=level,
-                    timestamp=timestamp
-                )
-                
-                # Store in the shared dictionary
-                if cell_congestion_store is not None:
-                    cell_congestion_store[cell_id] = congestion_data
-                    
-                    # Publish to client broker for client consumption
-                    publish_to_clients(congestion_data)
-                    
-            print(f"[SIMULATOR] Processed and stored {len(grid_data)} cells")
+            process_crowd_density_event(data_dict)
         else:
             # Try to parse as direct CellCongestionData (for backwards compatibility)
-            if 'timestamp' not in data_dict:
-                data_dict['timestamp'] = datetime.now()
-            
-            congestion_data = CellCongestionData(**data_dict)
-            
-            # Store in the shared dictionary
-            if cell_congestion_store is not None:
-                cell_congestion_store[congestion_data.cell_id] = congestion_data
-                print(f"[SIMULATOR] Stored congestion data - Cell: {congestion_data.cell_id}, Level: {congestion_data.congestion_level}")
-                
-                # Publish to client broker for client consumption
-                publish_to_clients(congestion_data)
-            else:
-                print(f"[SIMULATOR] Warning: Storage not initialized yet")
+            process_legacy_congestion_data(data_dict)
         
     except json.JSONDecodeError as e:
         print(f"[SIMULATOR] JSON decode error: {e}")
@@ -97,6 +109,7 @@ def on_message(client, userdata, msg):
         print(f"[SIMULATOR] Error processing message: {e}")
         import traceback
         traceback.print_exc()
+
 
 def publish_to_clients(congestion_data: CellCongestionData):
     """Publish congestion data to client broker"""
