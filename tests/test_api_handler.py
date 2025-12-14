@@ -4,6 +4,7 @@ Test suite for API handler endpoints
 import pytest
 from datetime import datetime
 from unittest.mock import patch, MagicMock
+import httpx
 
 
 @pytest.fixture
@@ -11,11 +12,16 @@ def client():
     """Create test client"""
     # Mock the MQTT startup to prevent it from running
     with patch('mqtt_handler.start_mqtt'):
-        from starlette.testclient import TestClient
+        import sys
+        import os
+        sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+        
         from api_handler import app
         
-        client = TestClient(app)
+        # Use httpx test client
+        client = httpx.Client(app=app, base_url="http://test")
         yield client
+        client.close()
 
 
 @pytest.fixture
