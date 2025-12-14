@@ -5,6 +5,7 @@ import pytest
 from datetime import datetime
 from unittest.mock import patch, MagicMock
 import httpx
+from httpx import ASGITransport
 
 
 @pytest.fixture
@@ -18,8 +19,9 @@ def client():
         
         from api_handler import app
         
-        # Use httpx test client
-        client = httpx.Client(app=app, base_url="http://test")
+        # Use httpx with ASGI transport for testing
+        transport = ASGITransport(app=app)
+        client = httpx.Client(transport=transport, base_url="http://test")
         yield client
         client.close()
 
