@@ -2,7 +2,7 @@
 Test suite for API handler endpoints
 """
 import pytest
-from fastapi.testclient import TestClient
+from starlette.testclient import TestClient
 from datetime import datetime
 from unittest.mock import patch, MagicMock
 
@@ -13,10 +13,9 @@ def client():
     # Import here to avoid circular imports and startup issues
     from api_handler import app
     
-    # Disable startup event for testing
-    app.router.on_startup = []
-    
-    return TestClient(app)
+    # Use context manager to handle startup/shutdown events
+    with TestClient(app) as client:
+        yield client
 
 
 @pytest.fixture
