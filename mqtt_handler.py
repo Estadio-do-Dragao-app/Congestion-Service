@@ -40,7 +40,14 @@ def on_message(client, userdata, msg):
             
             # Process each cell in the grid
             for cell_data in grid_data:
+                # Get cell_id or generate from x,y coordinates
                 cell_id = cell_data.get('cell_id')
+                if cell_id is None:
+                    # Generate cell_id from x,y coordinates
+                    x = cell_data.get('x', 0)
+                    y = cell_data.get('y', 0)
+                    cell_id = f"cell_{x}_{y}"
+                    
                 count = cell_data.get('count', 0)
                 
                 # Calculate congestion level (0-1 scale)
