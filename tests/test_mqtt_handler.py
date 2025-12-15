@@ -350,8 +350,10 @@ class TestPublishToClients:
 
 
 class TestStartMQTT:
-    """Test start_mqtt function"""
-    
+    @patch('mqtt_handler.CLIENT_PORT', 1885)
+    @patch('mqtt_handler.CLIENT_BROKER', 'localhost')
+    @patch('mqtt_handler.SIMULATOR_PORT', 1883)
+    @patch('mqtt_handler.SIMULATOR_BROKER', 'localhost')
     @patch('mqtt_handler.client_publisher')
     @patch('mqtt_handler.simulator_client')
     def test_start_mqtt_successful(self, mock_sim_client, mock_client_pub):
@@ -362,10 +364,14 @@ class TestStartMQTT:
         start_mqtt(mock_store)
         
         mock_sim_client.connect.assert_called_once_with('localhost', 1883, 60)
-        mock_client_pub.connect.assert_called_once_with('localhost', 1885, 60)
         mock_sim_client.loop_start.assert_called_once()
+        mock_client_pub.connect.assert_called_once_with('localhost', 1885, 60)
         mock_client_pub.loop_start.assert_called_once()
-        
+
+    @patch('mqtt_handler.CLIENT_PORT', 1885)
+    @patch('mqtt_handler.CLIENT_BROKER', 'localhost')
+    @patch('mqtt_handler.SIMULATOR_PORT', 1883)
+    @patch('mqtt_handler.SIMULATOR_BROKER', 'localhost')
     @patch('mqtt_handler.client_publisher')
     @patch('mqtt_handler.simulator_client')
     def test_start_mqtt_connection_error(self, mock_sim_client, mock_client_pub, capsys):
@@ -378,7 +384,8 @@ class TestStartMQTT:
         
         captured = capsys.readouterr()
         error_output = captured.out + captured.err
-        assert "[MQTT] Failed to start" in error_output or "Connection refused" in error_output
+        # A mensagem de erro é impressa pela função start_mqtt
+        assert "[MQTT] Failed to start" in error_output
 
 
 class TestMQTTClients:
