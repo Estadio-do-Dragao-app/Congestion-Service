@@ -4,16 +4,13 @@ Test suite for API handler endpoints
 import pytest
 from fastapi.testclient import TestClient
 from datetime import datetime
-from unittest.mock import patch, MagicMock
 
 
 @pytest.fixture
 def client():
     """Create test client"""
-    # Mock MQTT to prevent startup issues
-    with patch('mqtt_handler.start_mqtt'):
-        from api_handler import app
-        return TestClient(app)
+    from api_handler import app
+    return TestClient(app)
 
 
 @pytest.fixture
