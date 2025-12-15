@@ -12,9 +12,10 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 @pytest.fixture
 def client():
     """Create test client"""
-    with patch('api_handler.start_mqtt'):
+    with patch('mqtt_handler.start_mqtt'):
         from api_handler import app
-        return TestClient(app)
+        with TestClient(app) as test_client:
+            yield test_client
 
 @pytest.fixture
 def cell_congestion_store():
