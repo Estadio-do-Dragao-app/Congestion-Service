@@ -3,15 +3,18 @@ Test suite for API handler endpoints
 """
 import pytest
 from fastapi.testclient import TestClient
-from datetime import datetime
+from unittest.mock import patch
+import sys
+import os
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 @pytest.fixture
 def client():
     """Create test client"""
-    from api_handler import app
-    return TestClient(app)
-
+    with patch('api_handler.start_mqtt'):
+        from api_handler import app
+        return TestClient(app)
 
 @pytest.fixture
 def cell_congestion_store():
