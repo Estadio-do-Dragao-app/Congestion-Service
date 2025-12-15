@@ -2,28 +2,18 @@
 Test suite for API handler endpoints
 """
 import pytest
+from fastapi.testclient import TestClient
 from datetime import datetime
 from unittest.mock import patch, MagicMock
-import httpx
-from httpx import ASGITransport
 
 
 @pytest.fixture
 def client():
     """Create test client"""
-    # Mock the MQTT startup to prevent it from running
+    # Mock MQTT to prevent startup issues
     with patch('mqtt_handler.start_mqtt'):
-        import sys
-        import os
-        sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-        
         from api_handler import app
-        
-        # Use httpx with ASGI transport for testing
-        transport = ASGITransport(app=app)
-        client = httpx.Client(transport=transport, base_url="http://test")
-        yield client
-        client.close()
+        return TestClient(app)
 
 
 @pytest.fixture
