@@ -1,147 +1,124 @@
 import json
 import paho.mqtt.client as mqtt
-from models import CellCongestionData
+from schemas import CellCongestionData
 from mqtt_configs import SIMULATOR_BROKER, SIMULATOR_PORT, SIMULATOR_TOPIC, CLIENT_BROKER, CLIENT_PORT, CLIENT_TOPIC
-from datetime import datetime
+from datetime import datetime, timezone
+from typing import Optional, Dict
+from collections import defaultdict
 
-# Will import after app is created to avoid circular imports
-cell_congestion_store = None
+# In-memory storage: {cell_id: {camera_id: {count, timestamp, level}}}
+cell_congestion_store = defaultdict(dict)
+CAMERA_TTL = 30  # seconds
 
-def on_simulator_connect(client, userdata, flags, rc):
-    """Handle MQTT connection to simulator broker"""
-    if rc == 0:
-        print(f"[SIMULATOR] Connected to broker at {SIMULATOR_BROKER}:{SIMULATOR_PORT}")
-        client.subscribe(SIMULATOR_TOPIC)
-        print(f"[SIMULATOR] Subscribed to topic: {SIMULATOR_TOPIC}")
-    else:
-        print(f"[SIMULATOR] Connection failed with code {rc}")
-
-def on_client_connect(client, userdata, flags, rc):
-    """Handle MQTT connection to client broker"""
-    if rc == 0:
-        print(f"[CLIENT] Connected to broker at {CLIENT_BROKER}:{CLIENT_PORT}")
-    else:
-        print(f"[CLIENT] Connection failed with code {rc}")
-
-def process_grid_cell(cell_data, level, timestamp):
-    """Process a single cell from grid data"""
-    # Get cell_id or generate from x,y coordinates
-    cell_id = cell_data.get('cell_id')
-    if cell_id is None:
-        # Generate cell_id from x,y coordinates
-        x = cell_data.get('x', 0)
-        y = cell_data.get('y', 0)
-        cell_id = f"cell_{level}_{x}_{y}"
+def aggregate_cell_data(cell_id: str, level: int = 0) -> Optional[CellCongestionData]:
+    """
+    Aggregates data for a cell by taking the MAX count among active cameras.
+    Also PERFORMS MEMORY CLEANUP (GC) of stale camera entries.
+    """
+    cameras_data = cell_congestion_store.get(cell_id, {})
+    if not cameras_data:
+        return None
+    
+    current_time = datetime.now()
+    max_people = 0
+    active_cameras = []
+    
+    # Iterate over a list of keys to allow deletion during iteration
+    for cam_id in list(cameras_data.keys()):
+        data = cameras_data[cam_id]
+        # Handle both string and datetime timestamps
+        ts = data["timestamp"]
+        if isinstance(ts, str):
+            ts = datetime.fromisoformat(ts.replace("Z", "+00:00"))
         
-    count = cell_data.get('count', 0)
-    
-    # Calculate congestion level (0-1 scale)
-    # Assuming max 50 people per cell as full capacity
+        # Check TTL
+        if (current_time - ts.replace(tzinfo=None)).total_seconds() < CAMERA_TTL:
+            # RED TEAM FIX: Using MAX instead of SUM to avoid double counting in FOV overlaps
+            max_people = max(max_people, data["count"])
+            active_cameras.append(cam_id)
+        else:
+            # MEMORY LEAK FIX: Explicitly remove stale camera data
+            del cell_congestion_store[cell_id][cam_id]
+            
+    if not active_cameras:
+        if cell_id in cell_congestion_store and not cell_congestion_store[cell_id]:
+            del cell_congestion_store[cell_id]
+        return None
+
+    # Calculate congestion based on aggregated max
     max_capacity = 50
-    congestion_level = min(count / max_capacity, 1.0)
+    congestion_level = min(max_people / max_capacity, 1.0)
     
-    # Create CellCongestionData object
-    congestion_data = CellCongestionData(
+    return CellCongestionData(
         cell_id=cell_id,
         congestion_level=congestion_level,
-        people_count=count,
+        people_count=max_people,
         capacity=max_capacity,
         level=level,
-        timestamp=timestamp
+        timestamp=current_time,
+        camera_id=",".join(active_cameras)
     )
-    
-    return congestion_data
-
-def process_crowd_density_event(data_dict):
-    """Process crowd_density event type"""
-    grid_data = data_dict.get('grid_data', [])
-    timestamp = data_dict.get('timestamp', datetime.now().isoformat())
-    level = data_dict.get('level', 0)
-    
-    print(f"[SIMULATOR] Received crowd_density event with {len(grid_data)} cells")
-    
-    # Process each cell in the grid
-    for cell_data in grid_data:
-        congestion_data = process_grid_cell(cell_data, level, timestamp)
-        
-        # Store in the shared dictionary
-        if cell_congestion_store is not None:
-            cell_congestion_store[congestion_data.cell_id] = congestion_data
-            # Publish to client broker for client consumption
-            publish_to_clients(congestion_data)
-                
-    print(f"[SIMULATOR] Processed and stored {len(grid_data)} cells")
-
-def process_legacy_congestion_data(data_dict):
-    """Process legacy CellCongestionData format"""
-    if 'timestamp' not in data_dict:
-        data_dict['timestamp'] = datetime.now()
-    
-    congestion_data = CellCongestionData(**data_dict)
-    
-    # Store in the shared dictionary
-    if cell_congestion_store is not None:
-        cell_congestion_store[congestion_data.cell_id] = congestion_data
-        print(f"[SIMULATOR] Stored congestion data - Cell: {congestion_data.cell_id}, Level: {congestion_data.congestion_level}")
-        
-        # Publish to client broker for client consumption
-        publish_to_clients(congestion_data)
-    else:
-        print("[SIMULATOR] Warning: Storage not initialized yet")
 
 def on_message(client, userdata, msg):
-    """Process incoming MQTT messages with congestion data from simulator"""
+    """Process incoming MQTT messages with strict validation"""
     try:
-        # Decode the payload
         payload = msg.payload.decode('utf-8')
         data_dict = json.loads(payload)
         
-        # Check if this is a crowd_density event from the simulator
+        # Validation and Storage logic
         if data_dict.get('event_type') == 'crowd_density':
-            process_crowd_density_event(data_dict)
-        else:
-            # Try to parse as direct CellCongestionData (for backwards compatibility)
-            process_legacy_congestion_data(data_dict)
-        
-    except json.JSONDecodeError as e:
-        print(f"[SIMULATOR] JSON decode error: {e}")
-    except Exception as e:
-        print(f"[SIMULATOR] Error processing message: {e}")
-        import traceback
-        traceback.print_exc()
+            grid_data = data_dict.get('grid_data', [])
+            cam_id = data_dict.get('metadata', {}).get('camera_id', 'unknown_cam')
+            timestamp = datetime.now() # Use local arrival time for TTL consistency
+            level = data_dict.get('level', 0)
+            
+            for cell_item in grid_data:
+                cell_id = cell_item.get('cell_id')
+                if not cell_id:
+                    x, y = cell_item.get('x', 0), cell_item.get('y', 0)
+                    cell_id = f"cell_{level}_{x}_{y}"
+                
+                count = cell_item.get('count', 0)
+                
+                # Update nested store
+                cell_congestion_store[cell_id][cam_id] = {
+                    "count": count,
+                    "timestamp": timestamp,
+                    "level": level
+                }
+                
+                # Trigger aggregation and publish
+                agg_data = aggregate_cell_data(cell_id, level)
+                if agg_data:
+                    publish_to_clients(agg_data)
 
+    except Exception as e:
+        print(f"[SIMULATOR] Poison Pill / Error: {e}")
 
 def publish_to_clients(congestion_data: CellCongestionData):
     """Publish congestion data to client broker"""
     try:
         payload = congestion_data.model_dump_json()
         client_publisher.publish(CLIENT_TOPIC, payload, qos=1)
-        print(f"[CLIENT] Published to topic: {CLIENT_TOPIC} (cell={congestion_data.cell_id}, level={congestion_data.congestion_level:.2f})")
     except Exception as e:
         print(f"[CLIENT] Error publishing: {e}")
 
-# Create separate MQTT clients for simulator and client connections
+# Clients Setup
 simulator_client = mqtt.Client(client_id="congestion_service_receiver")
-simulator_client.on_connect = on_simulator_connect
 simulator_client.on_message = on_message
 
 client_publisher = mqtt.Client(client_id="congestion_service_publisher")
-client_publisher.on_connect = on_client_connect
 
-def start_mqtt(store):
-    """Start MQTT clients and connect to both brokers"""
-    global cell_congestion_store
-    cell_congestion_store = store
-    
+def start_mqtt(store=None):
+    """Start MQTT clients"""
+    # global cell_congestion_store # Store is now internal to maintain integrity
     try:
-        # Connect to simulator broker (to receive congestion events)
         simulator_client.connect(SIMULATOR_BROKER, SIMULATOR_PORT, 60)
+        simulator_client.subscribe(SIMULATOR_TOPIC)
         simulator_client.loop_start()
-        print(f"[SIMULATOR] Client started, connecting to {SIMULATOR_BROKER}:{SIMULATOR_PORT}")
         
-        # Connect to client broker (to publish congestion data)
         client_publisher.connect(CLIENT_BROKER, CLIENT_PORT, 60)
         client_publisher.loop_start()
-        print(f"[CLIENT] Publisher started, connecting to {CLIENT_BROKER}:{CLIENT_PORT}")
+        print("[MQTT] Services Started (Reliability Fixed)")
     except Exception as e:
         print(f"[MQTT] Failed to start: {e}")
