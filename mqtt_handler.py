@@ -64,6 +64,7 @@ def on_message(client, userdata, msg):
     try:
         payload = msg.payload.decode('utf-8')
         data_dict = json.loads(payload)
+
         
         # Validation and Storage logic
         if data_dict.get('event_type') == 'crowd_density':
