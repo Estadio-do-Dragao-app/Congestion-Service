@@ -8,7 +8,7 @@ app = FastAPI(title="Smart Stadium Congestion Service API",
               description="API for managing and retrieving congestion data in a smart stadium environment.",
               version="1.0.0")
 
-# Importar do handler para ter acesso ao store real e lógica de agregação
+# Import from handler to access the real store and aggregation logic
 from mqtt_handler import cell_congestion_store, aggregate_cell_data, start_mqtt
 
 @app.on_event("startup")
@@ -51,7 +51,7 @@ async def get_stadium_cell_heatmap():
     aggregated_cells = []
     
     for cell_id in list(cell_congestion_store.keys()):
-        # Obtemos o level a partir do store interno
+        # Get the level from the internal store
         sample_cam = next(iter(cell_congestion_store[cell_id].values()))
         level = sample_cam.get("level", 0)
         
