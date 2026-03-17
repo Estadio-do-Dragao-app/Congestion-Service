@@ -104,10 +104,11 @@ def publish_to_clients(congestion_data: CellCongestionData):
     """Publish congestion data to client broker"""
     try:
         payload = congestion_data.model_dump_json()
+        print(f"🔥 [CLIENT] Publishing: {payload[:150]}...")
         client_publisher.publish(CLIENT_TOPIC, payload, qos=1)
-        print(f"[CLIENT] Published to {CLIENT_TOPIC}: {congestion_data.cell_id} (congestion: {congestion_data.congestion_level:.2f})")
+        print(f"[CLIENT] ✅ Published to {CLIENT_TOPIC}: {congestion_data.cell_id} (congestion: {congestion_data.congestion_level:.2f}, level: {congestion_data.level})")
     except Exception as e:
-        print(f"[CLIENT] Error publishing: {e}")
+        print(f"[CLIENT] ❌ Error publishing: {e}")
 
 # Clients Setup
 simulator_client = mqtt.Client(client_id="congestion_service_receiver")
