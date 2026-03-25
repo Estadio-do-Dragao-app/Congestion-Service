@@ -101,8 +101,9 @@ client.loop_forever()
 The service also exposes a REST API for querying congestion data:
 
 - `GET /health` - Health check
-- `GET /congestion` - Get all cell congestion data
-- `GET /congestion/{cell_id}` - Get specific cell congestion
+- `GET /heatmap/stadium/cells` - Get congestion data for all stadium cells
+- `GET /heatmap/cell/{cell_id}` - Get congestion data for a specific cell
+- `GET /sections` - Get congestion data aggregated by stadium section
 
 ## 📦 Project Structure
 
