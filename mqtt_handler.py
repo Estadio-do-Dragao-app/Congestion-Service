@@ -66,10 +66,12 @@ def on_message(client, userdata, msg):
         payload = msg.payload.decode('utf-8')
         topic = msg.topic
         print(f"[MQTT] Received message on topic: {topic}")
+        print(f"[MQTT] Payload: {payload}")
         data_dict = json.loads(payload)
 
         # Validation and Storage logic
         if data_dict.get('event_type') == 'crowd_density':
+            print(f"[MQTT] Processing crowd_density event")
             grid_data = data_dict.get('grid_data', [])
             cam_id = data_dict.get('metadata', {}).get('camera_id', 'unknown_cam')
             timestamp = datetime.now() # Use local arrival time for TTL consistency
@@ -114,7 +116,7 @@ def publish_to_clients(congestion_data: CellCongestionData):
         client_publisher.publish(CLIENT_TOPIC, payload, qos=1)
         print(f"[CLIENT] Published to {CLIENT_TOPIC}: {congestion_data.cell_id} (congestion: {congestion_data.congestion_level:.2f}, level: {congestion_data.level})")
     except Exception as e:
-        print(f"[CLIENT] Error publishing: {e}")
+        print(f"[CLIENT] ❌ Error publishing: {e}")
 
 # Clients Setup
 simulator_client = mqtt.Client(client_id="congestion_service_receiver")
