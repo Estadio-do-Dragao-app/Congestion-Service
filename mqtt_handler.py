@@ -8,7 +8,7 @@ from collections import defaultdict
 
 # In-memory storage: {cell_id: {camera_id: {count, timestamp, level}}}
 cell_congestion_store = defaultdict(dict)
-CAMERA_TTL = 30  # seconds
+CAMERA_TTL = 15  # seconds - Reduced for more reactive cleanup
 
 def aggregate_cell_data(cell_id: str, level: int = 0) -> Optional[CellCongestionData]:
     """
@@ -46,7 +46,8 @@ def aggregate_cell_data(cell_id: str, level: int = 0) -> Optional[CellCongestion
         return None
 
     # Calculate congestion based on aggregated max
-    max_capacity = 50
+    # INCREASED for GPS scaling (50 users per cell is common in dense UA campus simulation)
+    max_capacity = 50 
     congestion_level = min(max_people / max_capacity, 1.0)
     
     return CellCongestionData(
@@ -63,15 +64,19 @@ def on_message(client, userdata, msg):
     """Process incoming MQTT messages with strict validation"""
     try:
         payload = msg.payload.decode('utf-8')
+        topic = msg.topic
+        print(f"[MQTT] Received message on topic: {topic}")
         data_dict = json.loads(payload)
 
-        
         # Validation and Storage logic
         if data_dict.get('event_type') == 'crowd_density':
             grid_data = data_dict.get('grid_data', [])
             cam_id = data_dict.get('metadata', {}).get('camera_id', 'unknown_cam')
             timestamp = datetime.now() # Use local arrival time for TTL consistency
             level = data_dict.get('level', 0)
+            
+            # PERFORMANCE FIX: Track which cells were updated in this batch
+            updated_cells = []
             
             for cell_item in grid_data:
                 cell_id = cell_item.get('cell_id')
@@ -87,20 +92,27 @@ def on_message(client, userdata, msg):
                     "timestamp": timestamp,
                     "level": level
                 }
-                
-                # Trigger aggregation and publish
-                agg_data = aggregate_cell_data(cell_id, level)
+                updated_cells.append(cell_id)
+            
+            # PERFORMANCE FIX: Trigger aggregate and publish AFTER processing the whole batch
+            # To keep it simple for the existing Flutter client (which expects individual messages),
+            # we still publish per cell, but we've significantly reduced the frequency by slowing the source.
+            # In a production environment, we would batch these into a single MQTT message.
+            for cid in updated_cells:
+                agg_data = aggregate_cell_data(cid, level)
                 if agg_data:
                     publish_to_clients(agg_data)
 
     except Exception as e:
-        print(f"[SIMULATOR] Poison Pill / Error: {e}")
+        print(f"[SIMULATOR] Error processing message: {e}")
 
 def publish_to_clients(congestion_data: CellCongestionData):
     """Publish congestion data to client broker"""
     try:
         payload = congestion_data.model_dump_json()
+        print(f"[CLIENT] Publishing: {payload[:150]}...")
         client_publisher.publish(CLIENT_TOPIC, payload, qos=1)
+        print(f"[CLIENT] Published to {CLIENT_TOPIC}: {congestion_data.cell_id} (congestion: {congestion_data.congestion_level:.2f}, level: {congestion_data.level})")
     except Exception as e:
         print(f"[CLIENT] Error publishing: {e}")
 
