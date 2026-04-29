@@ -1,5 +1,4 @@
 name: Build and Test
-
 on:
   push:
     branches:
@@ -65,8 +64,9 @@ jobs:
       
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
-          sonar.token: ${{ secrets.SONAR_TOKEN }}
           args: >
             -Dsonar.projectKey=Estadio-do-Dragao-app_Congestion-Service
             -Dsonar.organization=estadio-do-dragao-app
