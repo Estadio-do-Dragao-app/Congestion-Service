@@ -68,8 +68,8 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
-            -Dsonar.projectKey=Estadio-do-Dragao-app_Congestion-Service
-            -Dsonar.organization=estadio-do-dragao-app
+            -Dsonar.projectKey=Smart-Campus-UA_Congestion-Service
+            -Dsonar.organization=smart-campus-ua
             -Dsonar.sources=.
             -Dsonar.exclusions=tests/**,**/__pycache__/**,**/*.pyc,mosquitto/**,**/*.log,coverage.xml,htmlcov/**,*.yml,*.yaml,Dockerfile,main.py
             -Dsonar.tests=tests
