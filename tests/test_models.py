@@ -7,7 +7,7 @@ from pydantic import ValidationError
 from schemas import (
     CellCongestionData,
     SectionHeatmapResponse,
-    StadiumHeatmapResponse,
+    CampusHeatmapResponse,
 )
 
 
@@ -115,8 +115,8 @@ class TestSectionHeatmapResponse:
         assert len(response.cells) == 2
 
 
-class TestStadiumHeatmapResponse:
-    def test_valid_stadium_heatmap(self):
+class TestCampusHeatmapResponse:
+    def test_valid_campus_heatmap(self):
         cells = [
             CellCongestionData(
                 cell_id="cell_1", congestion_level=0.5, level=0, camera_id="cam1",
@@ -127,7 +127,7 @@ class TestStadiumHeatmapResponse:
                 people_count=40, timestamp=datetime.now()
             )
         ]
-        response = StadiumHeatmapResponse(
+        response = CampusHeatmapResponse(
             total_cells=2,
             average_congestion=0.65,
             cells=cells
@@ -136,8 +136,8 @@ class TestStadiumHeatmapResponse:
         assert response.average_congestion == 0.65
         assert len(response.cells) == 2
 
-    def test_stadium_heatmap_default_timestamp(self):
-        response = StadiumHeatmapResponse(
+    def test_campus_heatmap_default_timestamp(self):
+        response = CampusHeatmapResponse(
             total_cells=0,
             average_congestion=0.0,
             cells=[]

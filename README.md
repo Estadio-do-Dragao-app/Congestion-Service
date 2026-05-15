@@ -1,6 +1,6 @@
 # Congestion-Service
 
-A real-time congestion monitoring service for smart stadiums that receives congestion events from the Stadium-Event-Generator via MQTT and publishes congestion data to connected clients through its own MQTT broker.
+A real-time congestion monitoring service for smart campuses that receives congestion events from the Simulator via MQTT and publishes congestion data to connected clients through its own MQTT broker.
 
 ## 🏗️ Architecture
 
@@ -62,7 +62,7 @@ python main.py
 ### Simulator Broker (Port 1883 - Stadium-Event-Generator)
 | Topic | Direction | Description |
 |-------|-----------|-------------|
-| `stadium/events/congestion` | Simulator → Congestion Service | Congestion events from stadium |
+| `stadium/events/congestion` | Simulator → Congestion Service | Congestion events from campus |
 
 ### Client Broker (Port 1885 - Congestion Service)
 | Topic | Direction | Description |
@@ -101,9 +101,9 @@ client.loop_forever()
 The service also exposes a REST API for querying congestion data:
 
 - `GET /health` - Health check
-- `GET /heatmap/stadium/cells` - Get congestion data for all stadium cells
+- `GET /heatmap/stadium/cells` - Get congestion data for all campus cells
 - `GET /heatmap/cell/{cell_id}` - Get congestion data for a specific cell
-- `GET /sections` - Get congestion data aggregated by stadium section
+- `GET /sections` - Get congestion data aggregated by campus section
 
 ## 📦 Project Structure
 
