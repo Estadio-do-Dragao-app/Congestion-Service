@@ -9,9 +9,13 @@ pytest_plugins = ('pytest_asyncio',)
 
 
 @pytest.fixture(autouse=True)
-def mock_mqtt():
-    with patch('mqtt_handler.start_mqtt'), patch('mqtt_handler.stop_mqtt'):
+def mock_mqtt(request):
+    # Do not mock MQTT for mqtt_handler lifecycle tests
+    if "test_mqtt_handler.py" in request.node.nodeid:
         yield
+    else:
+        with patch('mqtt_handler.start_mqtt'), patch('mqtt_handler.stop_mqtt'):
+            yield
 
 
 @pytest.fixture(autouse=True)

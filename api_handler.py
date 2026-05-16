@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from schemas import SectionHeatmapResponse, CampusHeatmapResponse
 from store import aggregate_cell_data, get_all_aggregated_cells, cell_congestion_store
 from mqtt_handler import start_mqtt, stop_mqtt
+from prometheus_fastapi_instrumentator import Instrumentator
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -33,6 +34,9 @@ app = FastAPI(
     version="1.1.0",
     lifespan=lifespan
 )
+
+# Instrument the app and expose the /metrics endpoint
+Instrumentator().instrument(app).expose(app)
 
 @app.get("/heatmap/cell/{cell_id}", response_model=SectionHeatmapResponse)
 async def get_cell_heatmap(cell_id: str):

@@ -22,9 +22,8 @@ def aggregate_cell_data(cell_id: str, level: int = 0) -> Optional[CellCongestion
     max_people = 0
     active_cameras = []
     
-    # Iterate over a list of keys to allow deletion during iteration
-    for cam_id in list(cameras_data.keys()):
-        data = cameras_data[cam_id]
+    stale_cameras = []
+    for cam_id, data in cameras_data.items():
         ts = data["timestamp"]
         
         # Check TTL
@@ -32,8 +31,11 @@ def aggregate_cell_data(cell_id: str, level: int = 0) -> Optional[CellCongestion
             max_people = max(max_people, data["count"])
             active_cameras.append(cam_id)
         else:
-            # Memory cleanup: remove stale camera data
-            del cell_congestion_store[cell_id][cam_id]
+            stale_cameras.append(cam_id)
+            
+    # Cleanup stale entries
+    for cam_id in stale_cameras:
+        del cell_congestion_store[cell_id][cam_id]
             
     if not active_cameras:
         if cell_id in cell_congestion_store and not cell_congestion_store[cell_id]:
@@ -57,10 +59,10 @@ def get_all_aggregated_cells() -> List[CellCongestionData]:
     Utility function to get aggregated data for all tracked cells.
     """
     aggregated_cells = []
-    for cell_id in list(cell_congestion_store.keys()):
-        # Get the level from the internal store
-        cameras = cell_congestion_store[cell_id]
+    empty_cells = []
+    for cell_id, cameras in cell_congestion_store.items():
         if not cameras:
+            empty_cells.append(cell_id)
             continue
             
         sample_cam = next(iter(cameras.values()))
@@ -69,4 +71,10 @@ def get_all_aggregated_cells() -> List[CellCongestionData]:
         data = aggregate_cell_data(cell_id, level=level)
         if data:
             aggregated_cells.append(data)
+            
+    # Cleanup empty cells
+    for cell_id in empty_cells:
+        if cell_id in cell_congestion_store and not cell_congestion_store[cell_id]:
+            del cell_congestion_store[cell_id]
+            
     return aggregated_cells

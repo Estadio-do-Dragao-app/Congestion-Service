@@ -2,7 +2,7 @@
 
 A real-time congestion monitoring service for smart campuses that receives congestion events from the Simulator via MQTT and publishes congestion data to connected clients through its own MQTT broker.
 
-## 🏗️ Architecture
+## ️ Architecture
 
 ```
 Stadium-Event-Generator → [MQTT Port 1883] → Congestion Service
@@ -18,7 +18,7 @@ The service:
 3. **Publishes** congestion updates to clients via its own broker (port 1885) on `stadium/services/congestion`
 4. **Exposes** REST API for querying current congestion status
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Prerequisites
 - Stadium-Event-Generator must be running (provides MQTT broker on port 1883)
@@ -57,7 +57,7 @@ docker run -p 1885:1883 -p 9003:9001 eclipse-mosquitto:2.0
 python main.py
 ```
 
-## 📡 MQTT Brokers & Topics
+##  MQTT Brokers & Topics
 
 ### Simulator Broker (Port 1883 - Stadium-Event-Generator)
 | Topic | Direction | Description |
@@ -73,7 +73,7 @@ python main.py
 - Client connections: `ws://localhost:9003`
 - Simulator broker: `ws://localhost:9001`
 
-## 🔌 Client Connection Example
+##  Client Connection Example
 
 ```python
 import paho.mqtt.client as mqtt
@@ -96,7 +96,7 @@ client.connect("localhost", 1885, 60)
 client.loop_forever()
 ```
 
-## 🌐 REST API
+##  REST API
 
 The service also exposes a REST API for querying congestion data:
 
@@ -105,7 +105,7 @@ The service also exposes a REST API for querying congestion data:
 - `GET /heatmap/cell/{cell_id}` - Get congestion data for a specific cell
 - `GET /sections` - Get congestion data aggregated by campus section
 
-## 📦 Project Structure
+##  Project Structure
 
 ```
 Congestion-Service/
@@ -124,7 +124,7 @@ Congestion-Service/
     └── log/
 ```
 
-## 🔧 Configuration
+##  Configuration
 
 Environment variables (set in `docker-compose.yml` or `.env`):
 
@@ -133,7 +133,7 @@ Environment variables (set in `docker-compose.yml` or `.env`):
 - `MQTT_BROKER` - Hostname of Congestion-Service's own broker (default: `mosquitto`)
 - `MQTT_PORT` - Internal port for Congestion-Service broker (default: `1883`, mapped to external `1885`)
 
-## 📝 Notes
+##  Notes
 
 - The service maintains dual MQTT connections: one for receiving simulator events, one for publishing to clients
 - Congestion data is stored in-memory for quick API access

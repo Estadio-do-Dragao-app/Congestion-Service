@@ -53,3 +53,14 @@ class TestGetAllAggregatedCells:
         ids = [r.cell_id for r in results]
         assert "cell_1" in ids
         assert "cell_2" in ids
+
+    def test_get_all_with_empty_entry(self, clear_store):
+        # Manually insert an empty dict for a cell
+        store.cell_congestion_store["empty_cell"] = {}
+        store.cell_congestion_store["active_cell"]["cam1"] = {"count": 10, "timestamp": datetime.now(), "level": 0}
+        
+        results = store.get_all_aggregated_cells()
+        assert len(results) == 1
+        assert results[0].cell_id == "active_cell"
+        # Verify empty cell was cleaned up
+        assert "empty_cell" not in store.cell_congestion_store

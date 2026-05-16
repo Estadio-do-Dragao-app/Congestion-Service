@@ -86,3 +86,35 @@ class TestPublishToClients:
         mqtt_handler.publish_to_clients(data)
         captured = capsys.readouterr()
         assert "Error publishing" in captured.out
+
+class TestLifecycle:
+    def test_start_mqtt(self, capsys):
+        mock_sim = Mock()
+        mock_pub = Mock()
+        
+        mqtt_handler.start_mqtt(sim_client=mock_sim, pub_client=mock_pub)
+        
+        mock_sim.connect.assert_called_once()
+        mock_sim.subscribe.assert_called_once()
+        mock_sim.loop_start.assert_called_once()
+        mock_pub.connect.assert_called_once()
+        mock_pub.loop_start.assert_called_once()
+
+    def test_start_mqtt_error(self, capsys):
+        mock_sim = Mock()
+        mock_sim.connect.side_effect = Exception("Conn Error")
+        
+        mqtt_handler.start_mqtt(sim_client=mock_sim, pub_client=Mock())
+        captured = capsys.readouterr()
+        assert "Failed to start" in captured.out
+
+    def test_stop_mqtt(self):
+        mock_sim = Mock()
+        mock_pub = Mock()
+        
+        mqtt_handler.stop_mqtt(sim_client=mock_sim, pub_client=mock_pub)
+        
+        mock_sim.loop_stop.assert_called_once()
+        mock_sim.disconnect.assert_called_once()
+        mock_pub.loop_stop.assert_called_once()
+        mock_pub.disconnect.assert_called_once()
