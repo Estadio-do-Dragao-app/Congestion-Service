@@ -9,16 +9,20 @@ pytest_plugins = ('pytest_asyncio',)
 
 
 @pytest.fixture(autouse=True)
-def mock_mqtt():
-    with patch('mqtt_handler.start_mqtt'):
+def mock_mqtt(request):
+    # Do not mock MQTT for mqtt_handler lifecycle tests
+    if "test_mqtt_handler.py" in request.node.nodeid:
         yield
+    else:
+        with patch('mqtt_handler.start_mqtt'), patch('mqtt_handler.stop_mqtt'):
+            yield
 
 
 @pytest.fixture(autouse=True)
-def reset_mqtt_store():
+def reset_store():
     yield
     try:
-        import mqtt_handler
-        mqtt_handler.cell_congestion_store.clear()
+        import store
+        store.cell_congestion_store.clear()
     except:
         pass

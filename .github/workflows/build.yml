@@ -3,9 +3,9 @@ on:
   push:
     branches:
       - main
+      - dev
   pull_request:
     types: [opened, synchronize, reopened]
-
 jobs:
   test:
     name: Run Tests
@@ -55,13 +55,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-      
+          fetch-depth: 0
+
       - name: Download coverage report
         uses: actions/download-artifact@v4
         with:
           name: coverage-reports
-      
+
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
@@ -69,7 +69,7 @@ jobs:
         with:
           args: >
             -Dsonar.projectKey=Estadio-do-Dragao-app_Congestion-Service
-            -Dsonar.organization=estadio-do-dragao-app
+            -Dsonar.organization=fanapp-estadio-dragao
             -Dsonar.sources=.
             -Dsonar.exclusions=tests/**,**/__pycache__/**,**/*.pyc,mosquitto/**,**/*.log,coverage.xml,htmlcov/**,*.yml,*.yaml,Dockerfile,main.py
             -Dsonar.tests=tests

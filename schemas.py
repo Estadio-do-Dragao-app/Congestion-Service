@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from pydantic import BaseModel, Field, ConfigDict
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 import uuid
 
 # --- Shared Base / Constants ---
@@ -19,7 +19,7 @@ class CrowdDensityEvent(BaseModel):
     level: int
     grid_data: List[GridCell]
     total_people: int = Field(..., ge=0)
-    metadata: Dict[str, str]
+    metadata: Dict[str, Any]
 
 class CellCongestionData(BaseModel):
     """Congestion data for individual cells"""
@@ -40,8 +40,8 @@ class SectionHeatmapResponse(BaseModel):
     capacity: int
     cells: List[CellCongestionData]
 
-class StadiumHeatmapResponse(BaseModel):
-    """Heatmap data for the entire stadium"""
+class CampusHeatmapResponse(BaseModel):
+    """Heatmap data for the entire campus"""
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     total_cells: int
     average_congestion: float
