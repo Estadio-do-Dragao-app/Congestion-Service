@@ -38,7 +38,11 @@ app = FastAPI(
 # Instrument the app and expose the /metrics endpoint
 Instrumentator().instrument(app).expose(app)
 
-@app.get("/heatmap/cell/{cell_id}", response_model=SectionHeatmapResponse)
+@app.get(
+    "/heatmap/cell/{cell_id}",
+    response_model=SectionHeatmapResponse,
+    responses={404: {"description": "No active camera data found for the cell"}}
+)
 async def get_cell_heatmap(cell_id: str):
     """
     Get heatmap data for a specific cell (Aggregated across cameras)
@@ -57,7 +61,11 @@ async def get_cell_heatmap(cell_id: str):
         cells=[data]
     )
 
-@app.get("/heatmap/stadium/cells", response_model=CampusHeatmapResponse)
+@app.get(
+    "/heatmap/stadium/cells",
+    response_model=CampusHeatmapResponse,
+    responses={404: {"description": "No active congestion data available"}}
+)
 async def get_stadium_cell_heatmap():
     """
     Get aggregated heatmap data for the entire campus.
