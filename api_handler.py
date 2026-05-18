@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, Depends, Security
 from fastapi.security import APIKeyHeader
-from typing import List, Optional
+from typing import List, Optional, Annotated
 from datetime import datetime
 from contextlib import asynccontextmanager
 import os
@@ -14,7 +14,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 API_KEY = os.getenv("API_KEY", "dragao_secret_key_2026")
 _api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
-async def get_api_key(api_key: Optional[str] = Security(_api_key_header)):
+def get_api_key(api_key: Optional[str] = Security(_api_key_header)):
     if api_key and secrets.compare_digest(api_key, API_KEY):
         return api_key
     raise HTTPException(status_code=401, detail="Unauthorized: invalid or missing API key")
@@ -54,7 +54,7 @@ Instrumentator().instrument(app).expose(app)
     response_model=SectionHeatmapResponse,
     responses={404: {"description": "No active camera data found for the cell"}}
 )
-async def get_cell_heatmap(cell_id: str, _: str = Depends(get_api_key)):
+async def get_cell_heatmap(cell_id: str, _: Annotated[str, Depends(get_api_key)]):
     """
     Get heatmap data for a specific cell (Aggregated across cameras)
     """
@@ -77,7 +77,7 @@ async def get_cell_heatmap(cell_id: str, _: str = Depends(get_api_key)):
     response_model=CampusHeatmapResponse,
     responses={404: {"description": "No active congestion data available"}}
 )
-async def get_stadium_cell_heatmap(_: str = Depends(get_api_key)):
+async def get_stadium_cell_heatmap(_: Annotated[str, Depends(get_api_key)]):
     """
     Get aggregated heatmap data for the entire campus.
     Note: Endpoint path kept as /stadium/ to maintain backward compatibility.
@@ -98,7 +98,7 @@ async def get_stadium_cell_heatmap(_: str = Depends(get_api_key)):
     )
 
 @app.get("/sections", response_model=List[SectionHeatmapResponse])
-async def list_sections(_: str = Depends(get_api_key)):
+async def list_sections(_: Annotated[str, Depends(get_api_key)]):
     """
     List all tracked cells with their aggregated data.
     """
