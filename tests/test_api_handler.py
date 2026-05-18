@@ -12,6 +12,8 @@ def client():
         with TestClient(app) as test_client:
             yield test_client
 
+VALID_KEY = {"X-API-Key": "dragao_secret_key_2026"}
+
 @pytest.fixture
 def clear_store():
     store.cell_congestion_store.clear()
@@ -33,7 +35,7 @@ def populate_store(clear_store):
 
 class TestGetCellHeatmap:
     def test_get_existing_cell(self, client, populate_store):
-        response = client.get("/heatmap/cell/cell_1")
+        response = client.get("/heatmap/cell/cell_1", headers=VALID_KEY)
         assert response.status_code == 200
         data = response.json()
         assert data["section_id"] == "cell_1"
@@ -43,13 +45,17 @@ class TestGetCellHeatmap:
         assert len(data["cells"]) == 1
 
     def test_get_nonexistent_cell(self, client, clear_store):
-        response = client.get("/heatmap/cell/nonexistent")
+        response = client.get("/heatmap/cell/nonexistent", headers=VALID_KEY)
         assert response.status_code == 404
         assert "No active camera data found" in response.json()["detail"]
 
+    def test_get_cell_no_key(self, client, populate_store):
+        response = client.get("/heatmap/cell/cell_1")
+        assert response.status_code == 401
+
 class TestGetStadiumCellHeatmap:
     def test_get_stadium_heatmap_with_data(self, client, populate_store):
-        response = client.get("/heatmap/stadium/cells")
+        response = client.get("/heatmap/stadium/cells", headers=VALID_KEY)
         assert response.status_code == 200
         data = response.json()
         assert data["total_cells"] == 5
@@ -57,13 +63,17 @@ class TestGetStadiumCellHeatmap:
         assert len(data["cells"]) == 5
 
     def test_get_stadium_heatmap_empty(self, client, clear_store):
-        response = client.get("/heatmap/stadium/cells")
+        response = client.get("/heatmap/stadium/cells", headers=VALID_KEY)
         assert response.status_code == 404
         assert "No active congestion data available" in response.json()["detail"]
 
+    def test_get_stadium_heatmap_no_key(self, client, populate_store):
+        response = client.get("/heatmap/stadium/cells")
+        assert response.status_code == 401
+
 class TestListSections:
     def test_list_sections_with_data(self, client, populate_store):
-        response = client.get("/sections")
+        response = client.get("/sections", headers=VALID_KEY)
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 5
@@ -71,16 +81,20 @@ class TestListSections:
         assert all("congestion_level" in item for item in data)
 
     def test_list_sections_empty(self, client, clear_store):
-        response = client.get("/sections")
+        response = client.get("/sections", headers=VALID_KEY)
         assert response.status_code == 200
         data = response.json()
         assert data == []
 
     def test_sections_sorted_by_congestion(self, client, populate_store):
-        response = client.get("/sections")
+        response = client.get("/sections", headers=VALID_KEY)
         data = response.json()
         levels = [item["congestion_level"] for item in data]
         assert levels == sorted(levels, reverse=True)
+
+    def test_list_sections_no_key(self, client, populate_store):
+        response = client.get("/sections")
+        assert response.status_code == 401
 
 class TestHealthCheck:
     def test_health_check_with_data(self, client, populate_store):
