@@ -93,14 +93,12 @@ def publish_to_clients(congestion_data: CellCongestionData):
         print(f"[CLIENT] Error publishing: {e}")
 
 # Clients Setup
-simulator_client = mqtt.Client(client_id="congestion_service_receiver")
+simulator_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1, client_id="congestion_service_receiver")
 simulator_client.on_message = on_message
 _configure_mqtt_tls(simulator_client)
 
-client_publisher = mqtt.Client(client_id="congestion_service_publisher")
+client_publisher = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1, client_id="congestion_service_publisher")
 _configure_mqtt_tls(client_publisher)
-
-
 def start_mqtt(sim_client=None, pub_client=None):
     """Start MQTT clients"""
     sim_client = sim_client or simulator_client

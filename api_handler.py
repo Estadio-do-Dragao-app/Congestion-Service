@@ -29,7 +29,7 @@ async def lifespan(app: FastAPI):
     start_mqtt()
     
     print("[STARTUP] MQTT Handler initialized")
-    print("[STARTUP] API Documentation: http://0.0.0.0:8000/docs")
+    print("[STARTUP] API Documentation: http://0.0.0.0:8000/docs")  # NOSONAR
     print("=" * 60 + "\n")
     
     yield
