@@ -1,10 +1,35 @@
 import json
+import ssl
 import paho.mqtt.client as mqtt
 from schemas import CellCongestionData, CrowdDensityEvent
-from mqtt_configs import SIMULATOR_BROKER, SIMULATOR_PORT, SIMULATOR_TOPIC, CLIENT_BROKER, CLIENT_PORT, CLIENT_TOPIC
+from mqtt_configs import (
+    SIMULATOR_BROKER, SIMULATOR_PORT, SIMULATOR_TOPIC,
+    CLIENT_BROKER, CLIENT_PORT, CLIENT_TOPIC,
+    MQTT_USER, MQTT_PASS, MQTT_CA_CERT,
+)
 from datetime import datetime
 from typing import Optional
 from store import cell_congestion_store, aggregate_cell_data
+
+
+def _configure_mqtt_tls(client: mqtt.Client) -> None:
+    """Apply credentials and TLS to a paho Client.
+
+    If MQTT_CA_CERT points to a readable file, enables MQTTS (port 8883).
+    Otherwise, falls back to authenticated plain MQTT (port 1883).
+    Credentials are always set.
+    """
+    client.username_pw_set(MQTT_USER, MQTT_PASS)
+    if MQTT_CA_CERT:
+        try:
+            client.tls_set(
+                ca_certs=MQTT_CA_CERT,
+                tls_version=ssl.PROTOCOL_TLS_CLIENT,
+            )
+            client.tls_insecure_set(False)
+        except Exception as exc:  # pragma: no cover
+            print(f"[MQTT][TLS] Warning: could not configure TLS — {exc}")
+
 
 def _get_cell_id(cell_item, level: int) -> str:
     """Generate a consistent cell ID from coordinates or provided ID"""
@@ -70,9 +95,10 @@ def publish_to_clients(congestion_data: CellCongestionData):
 # Clients Setup
 simulator_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1, client_id="congestion_service_receiver")
 simulator_client.on_message = on_message
+_configure_mqtt_tls(simulator_client)
 
 client_publisher = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1, client_id="congestion_service_publisher")
-
+_configure_mqtt_tls(client_publisher)
 def start_mqtt(sim_client=None, pub_client=None):
     """Start MQTT clients"""
     sim_client = sim_client or simulator_client

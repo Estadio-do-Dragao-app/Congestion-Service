@@ -21,5 +21,9 @@ RUN pip install --no-cache-dir --only-binary :all: -r /app/requirements.txt
 # Copy the service code (context is now the service directory)
 COPY . /app/
 
+# Create non-root user
+RUN adduser --disabled-password --gecos "" appuser && chown -R appuser:appuser /app
+USER appuser
+
 # Default command
 CMD ["uvicorn", "api_handler:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -9,3 +9,10 @@ CLIENT_TOPIC = os.getenv("CLIENT_TOPIC", "stadium/services/congestion")
 SIMULATOR_BROKER = os.getenv("SIMULATOR_BROKER", "localhost")
 SIMULATOR_PORT = int(os.getenv("SIMULATOR_PORT", "1883"))
 SIMULATOR_TOPIC = os.getenv("SIMULATOR_TOPIC", "stadium/events/congestion")
+
+# TLS / Authentication configuration
+# MQTT_USER / MQTT_PASS — service account credentials (see docker-config/certs/generate_certs.sh)
+# MQTT_CA_CERT          — path to Root CA cert mounted inside the container
+MQTT_USER = os.getenv("MQTT_USER", "services")
+MQTT_PASS = os.getenv("MQTT_PASS", "dragao_mqtt_2026")
+MQTT_CA_CERT = os.getenv("MQTT_CA_CERT", "")  # e.g. /certs/ca.crt
